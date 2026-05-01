@@ -31,14 +31,6 @@ These map 1:1 to the `jarify.executable` and `jarify.configPath` settings in `ja
 
 ## Development
 
-Generate the Gradle wrapper once after clone (requires a system Gradle ≥ 8.10):
-
-```bash
-mise run wrapper
-```
-
-Then:
-
 ```bash
 mise run run-ide   # launch a sandbox IDE with the plugin loaded
 mise run build     # produce build/distributions/jarify-jetbrains-<ver>.zip

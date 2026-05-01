@@ -1,7 +1,6 @@
 package com.amfaro.jarify.cli
 
 import com.amfaro.jarify.settings.JarifySettings
-import com.intellij.util.EnvironmentUtil
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -16,11 +15,32 @@ object JarifyCli {
         return if (configPath != null) listOf("--config", configPath) else emptyList()
     }
 
+    /**
+     * Resolves [name] to an absolute path via the user's login shell (`$SHELL -l -c "command -v <name>"`).
+     * Falls back to [name] unchanged if the shell probe fails (e.g. the user set an absolute path).
+     */
+    fun resolveExecutable(name: String): String {
+        if (name.startsWith("/")) return name          // already absolute
+        val shell = System.getenv("SHELL")?.takeIf { it.isNotBlank() } ?: return name
+        return try {
+            val proc = ProcessBuilder(shell, "-l", "-c", "command -v $name")
+                .redirectErrorStream(true)
+                .start()
+            if (!proc.waitFor(5, TimeUnit.SECONDS)) {
+                proc.destroyForcibly()
+                return name
+            }
+            val resolved = proc.inputStream.bufferedReader().readText().trim()
+            if (proc.exitValue() == 0 && resolved.isNotEmpty()) resolved else name
+        } catch (_: Exception) {
+            name
+        }
+    }
+
     fun runWithStdin(args: List<String>, stdin: String, timeoutMillis: Long = 10_000L): CliResult {
-        val cmd = listOf(executable()) + args
+        val cmd = listOf(resolveExecutable(executable())) + args
         return try {
             val proc = ProcessBuilder(cmd)
-                .apply { environment().putAll(EnvironmentUtil.getEnvironmentMap()) }
                 .redirectErrorStream(false)
                 .start()
 
@@ -60,10 +80,9 @@ object JarifyCli {
     }
 
     fun isAvailable(): Boolean = try {
-        val proc = ProcessBuilder(executable(), "--version")
-                .apply { environment().putAll(EnvironmentUtil.getEnvironmentMap()) }
-                .redirectErrorStream(true)
-                .start()
+        val proc = ProcessBuilder(resolveExecutable(executable()), "--version")
+            .redirectErrorStream(true)
+            .start()
         if (!proc.waitFor(5, TimeUnit.SECONDS)) {
             proc.destroyForcibly()
             false

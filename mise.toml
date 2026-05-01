@@ -1,0 +1,26 @@
+[tools]
+java = "temurin-17"
+
+[tasks.run-ide]
+description = "Launch a sandbox IDE with the plugin loaded"
+run = "./gradlew runIde"
+
+[tasks.build]
+description = "Build the plugin distribution zip"
+run = "./gradlew buildPlugin"
+
+[tasks.verify]
+description = "Run the JetBrains plugin verifier"
+run = "./gradlew verifyPlugin"
+
+[tasks.test]
+description = "Run unit tests"
+run = "./gradlew test"
+
+[tasks.publish]
+description = "Publish to JetBrains Marketplace (requires JETBRAINS_MARKETPLACE_TOKEN)"
+run = "./gradlew publishPlugin"
+
+[tasks.wrapper]
+description = "Generate the Gradle wrapper (run once after clone)"
+run = "gradle wrapper --gradle-version 8.10.2"

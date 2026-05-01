@@ -54,10 +54,10 @@ class JarifyExternalAnnotator :
         for (item in result.items) {
             val severity = when (item.severity.lowercase()) {
                 "error" -> HighlightSeverity.ERROR
-                "warning" -> HighlightSeverity.WARNING
+                "warning", "warn" -> HighlightSeverity.WARNING
                 "info" -> HighlightSeverity.INFORMATION
                 "hint" -> HighlightSeverity.WEAK_WARNING
-                else -> HighlightSeverity.ERROR
+                else -> HighlightSeverity.WARNING
             }
             holder.newAnnotation(severity, item.message)
                 .range(toTextRange(doc, item.line, item.column))

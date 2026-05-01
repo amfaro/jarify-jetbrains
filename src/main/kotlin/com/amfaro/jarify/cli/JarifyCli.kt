@@ -8,6 +8,9 @@ data class CliResult(val exitCode: Int, val stdout: String, val stderr: String)
 
 object JarifyCli {
 
+    // Cache resolved executable paths — login-shell probe is ~100ms, not worth paying per call.
+    private val resolvedCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     fun executable(): String = JarifySettings.getInstance().executable
 
     fun buildConfigArgs(): List<String> {
@@ -21,19 +24,21 @@ object JarifyCli {
      */
     fun resolveExecutable(name: String): String {
         if (name.startsWith("/")) return name          // already absolute
-        val shell = System.getenv("SHELL")?.takeIf { it.isNotBlank() } ?: return name
-        return try {
-            val proc = ProcessBuilder(shell, "-l", "-c", "command -v $name")
-                .redirectErrorStream(true)
-                .start()
-            if (!proc.waitFor(5, TimeUnit.SECONDS)) {
-                proc.destroyForcibly()
-                return name
+        return resolvedCache.getOrPut(name) {
+            val shell = System.getenv("SHELL")?.takeIf { it.isNotBlank() } ?: return@getOrPut name
+            try {
+                val proc = ProcessBuilder(shell, "-l", "-c", "command -v $name")
+                    .redirectErrorStream(true)
+                    .start()
+                if (!proc.waitFor(5, TimeUnit.SECONDS)) {
+                    proc.destroyForcibly()
+                    return@getOrPut name
+                }
+                val resolved = proc.inputStream.bufferedReader().readText().trim()
+                if (proc.exitValue() == 0 && resolved.isNotEmpty()) resolved else name
+            } catch (_: Exception) {
+                name
             }
-            val resolved = proc.inputStream.bufferedReader().readText().trim()
-            if (proc.exitValue() == 0 && resolved.isNotEmpty()) resolved else name
-        } catch (_: Exception) {
-            name
         }
     }
 

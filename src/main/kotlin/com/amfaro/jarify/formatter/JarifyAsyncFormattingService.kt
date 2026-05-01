@@ -18,8 +18,14 @@ class JarifyAsyncFormattingService : AsyncDocumentFormattingService() {
         EnumSet.noneOf(FormattingService.Feature::class.java)
 
     override fun canFormat(file: PsiFile): Boolean {
-        val langId = file.language.id.lowercase()
-        if (langId == "sql" || langId.startsWith("sql")) return true
+        // Walk the language hierarchy — covers SQL dialects (MySQL, PostgreSQL, etc.)
+        // that extend SqlLanguage but have their own IDs.
+        var lang: com.intellij.lang.Language? = file.language
+        while (lang != null) {
+            if (lang.id.equals("SQL", ignoreCase = true)) return true
+            lang = lang.baseLanguage
+        }
+        // Fallback: match by file extension for plain-text .sql files.
         val ext = file.virtualFile?.extension?.lowercase() ?: return false
         return ext in setOf("sql", "ddl")
     }

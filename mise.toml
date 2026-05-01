@@ -9,6 +9,10 @@ run = "./gradlew runIde"
 description = "Build the plugin distribution zip"
 run = "./gradlew buildPlugin"
 
+[tasks.clean]
+description = "Wipe Gradle build outputs"
+run = "./gradlew clean"
+
 [tasks.verify]
 description = "Run the JetBrains plugin verifier"
 run = "./gradlew verifyPlugin"

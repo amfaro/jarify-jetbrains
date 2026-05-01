@@ -26,6 +26,8 @@ class JarifyAsyncFormattingService : AsyncDocumentFormattingService() {
 
     override fun getName(): String = "Jarify"
 
+    override fun getNotificationGroupId(): String = "Jarify"
+
     override fun createFormattingTask(request: AsyncFormattingRequest): FormattingTask? {
         val ioFile = request.ioFile ?: return null
         val text = request.documentText

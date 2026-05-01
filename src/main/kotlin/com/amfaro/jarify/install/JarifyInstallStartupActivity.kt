@@ -1,6 +1,7 @@
 package com.amfaro.jarify.install
 
 import com.amfaro.jarify.cli.JarifyCli
+import com.intellij.util.EnvironmentUtil
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -49,6 +50,7 @@ class JarifyInstallStartupActivity : ProjectActivity {
             override fun run(indicator: ProgressIndicator) {
                 val (code, output) = try {
                     val proc = ProcessBuilder("uv", "tool", "install", "jarify")
+                        .apply { environment().putAll(EnvironmentUtil.getEnvironmentMap()) }
                         .redirectErrorStream(true)
                         .start()
                     val finished = proc.waitFor(120, TimeUnit.SECONDS)

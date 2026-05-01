@@ -1,6 +1,7 @@
 package com.amfaro.jarify.cli
 
 import com.amfaro.jarify.settings.JarifySettings
+import com.intellij.util.EnvironmentUtil
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -18,7 +19,10 @@ object JarifyCli {
     fun runWithStdin(args: List<String>, stdin: String, timeoutMillis: Long = 10_000L): CliResult {
         val cmd = listOf(executable()) + args
         return try {
-            val proc = ProcessBuilder(cmd).redirectErrorStream(false).start()
+            val proc = ProcessBuilder(cmd)
+                .apply { environment().putAll(EnvironmentUtil.getEnvironmentMap()) }
+                .redirectErrorStream(false)
+                .start()
 
             // Drain stdout/stderr concurrently to avoid deadlocking on the
             // ~64 KB OS pipe buffer when jarify emits large output.
@@ -57,8 +61,9 @@ object JarifyCli {
 
     fun isAvailable(): Boolean = try {
         val proc = ProcessBuilder(executable(), "--version")
-            .redirectErrorStream(true)
-            .start()
+                .apply { environment().putAll(EnvironmentUtil.getEnvironmentMap()) }
+                .redirectErrorStream(true)
+                .start()
         if (!proc.waitFor(5, TimeUnit.SECONDS)) {
             proc.destroyForcibly()
             false

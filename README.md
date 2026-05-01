@@ -17,7 +17,7 @@ JetBrains IDE plugin providing **formatting** and **diagnostics** for SQL via th
 
 ### 1. Install the plugin
 
-Install from the JetBrains Marketplace, or manually via **Settings → Plugins → ⚙ → Install Plugin from Disk**.
+**Settings → Plugins → ⚙ → Install Plugin from Disk** → select the `.zip` from `build/distributions/`.
 
 ### 2. Install `jarify`
 

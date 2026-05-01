@@ -15,7 +15,7 @@ import java.util.EnumSet
 class JarifyAsyncFormattingService : AsyncDocumentFormattingService() {
 
     override fun getFeatures(): MutableSet<FormattingService.Feature> =
-        EnumSet.noneOf(FormattingService.Feature::class.java)
+        EnumSet.of(FormattingService.Feature.FORMAT_FRAGMENTS)
 
     override fun canFormat(file: PsiFile): Boolean {
         // Walk the language hierarchy — covers SQL dialects (MySQL, PostgreSQL, etc.)

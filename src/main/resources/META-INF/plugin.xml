@@ -25,6 +25,8 @@
         <formattingService implementation="com.amfaro.jarify.formatter.JarifyAsyncFormattingService"/>
         <externalAnnotator language="SQL"
                            implementationClass="com.amfaro.jarify.linter.JarifyExternalAnnotator"/>
+        <externalAnnotator language="GenericSQL"
+                           implementationClass="com.amfaro.jarify.linter.JarifyExternalAnnotator"/>
         <notificationGroup id="Jarify" displayType="BALLOON"/>
         <postStartupActivity implementation="com.amfaro.jarify.install.JarifyInstallStartupActivity"/>
     </extensions>

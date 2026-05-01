@@ -15,11 +15,19 @@ JetBrains IDE plugin providing **formatting** and **diagnostics** for SQL via th
 
 ## Getting Started
 
-### 1. Install the plugin
+### 1. Build the plugin zip
+
+```bash
+mise run build
+```
+
+This produces `build/distributions/jarify-jetbrains-<ver>.zip`.
+
+### 2. Install the plugin
 
 **Settings → Plugins → ⚙ → Install Plugin from Disk** → select the `.zip` from `build/distributions/`.
 
-### 2. Install `jarify`
+### 3. Install `jarify`
 
 On first project open, the plugin checks for `jarify` and offers to install it automatically via `uv tool install jarify`. Accept the prompt, or install manually:
 
@@ -27,15 +35,17 @@ On first project open, the plugin checks for `jarify` and offers to install it a
 uv tool install jarify
 ```
 
-### 3. Enable format on save _(optional)_
+### 4. Enable format on save _(optional)_
 
 Formatting on save is controlled by DataGrip/IntelliJ, not the plugin. You must opt in:
 
 > **Settings → Tools → Actions on Save** → enable **Reformat code**
 
+Important: JetBrains runs Actions on Save on **explicit save** (`⌘S` / `Ctrl+S`). Plain autosave does not trigger it.
+
 Without this step, the formatter won't run on save — but **Reformat Code (`⌥⌘L` / `Ctrl+Alt+L`)** works immediately with no extra configuration.
 
-### 4. Lint annotations
+### 5. Lint annotations
 
 No setup required. Inline warnings and errors appear automatically as you edit any SQL file.
 

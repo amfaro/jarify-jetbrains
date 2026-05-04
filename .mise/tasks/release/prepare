@@ -7,6 +7,10 @@ set -euo pipefail
 new_version=$(git-cliff --bumped-version 2>/dev/null || true)
 new_version="${new_version#v}"
 
+if [[ -n "${FORCE_VERSION:-}" ]]; then
+  new_version="${FORCE_VERSION#v}"
+fi
+
 if [[ -z "$new_version" ]]; then
   echo "No releasable commits. Skipping."
   exit 0
@@ -14,7 +18,7 @@ fi
 
 current=$(grep '^pluginVersion=' gradle.properties | cut -d= -f2)
 
-if [[ "$current" == "$new_version" ]]; then
+if [[ "$current" == "$new_version" ]] && [[ -z "${FORCE_VERSION:-}" ]]; then
   echo "Already at v${new_version}. Skipping."
   exit 0
 fi

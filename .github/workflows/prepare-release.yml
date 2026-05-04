@@ -12,6 +12,13 @@ on:
       - 'cliff.toml'
       - '.mise/tasks/release/**'
   workflow_dispatch:
+    inputs:
+      force_version:
+        description: >-
+          Override version (e.g. 0.1.0). Bypasses git-cliff and
+          the already-at-version guard. Use for bootstrap releases.
+        type: string
+        required: false
 
 permissions:
   contents: write
@@ -33,3 +40,4 @@ jobs:
         run: mise run release:prepare
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_VERSION: ${{ inputs.force_version }}

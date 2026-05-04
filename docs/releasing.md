@@ -63,14 +63,19 @@ Artifacts land in `build/distributions/*.zip`.
 
 ## Secrets
 
-### Required
+Release automation uses GitHub Actions-native credentials only. No Doppler or GitHub App is required for this repo.
+
+### Automatic
 
 | Secret | Where used | Notes |
 |---|---|---|
-| `DOPPLER_TOKEN` | `prepare-release.yml`, `publish.yml` | lets workflow fetch shared org secrets from Doppler `shared/prod` |
+| `GITHUB_TOKEN` | `prepare-release.yml`, `publish.yml` | provided automatically by GitHub Actions; used for checkout, branch push, PR creation, and GitHub Release |
+
+### Required repository secrets
+
+| Secret | Where used | Notes |
+|---|---|---|
 | `JETBRAINS_MARKETPLACE_TOKEN` | `publish.yml` | Marketplace personal access token used by `publishPlugin` |
-| `WORKFLOW_CLIENT_ID` | fetched from Doppler | GitHub App credential for short-lived workflow token |
-| `WORKFLOW_CLIENT_PRIVATE_KEY` | fetched from Doppler | GitHub App private key |
 
 ### Optional signing secrets
 
@@ -85,8 +90,7 @@ Artifacts land in `build/distributions/*.zip`.
 1. Sign in to JetBrains Marketplace / Hub with publishing account.
 2. Open `My Tokens`.
 3. Create personal access token for plugin publishing.
-4. Store it in CI as `JETBRAINS_MARKETPLACE_TOKEN`.
-5. If CI secrets are Doppler-synced later, store it in Doppler instead of editing GitHub secrets manually.
+4. Store it in this repo under **Settings → Secrets and variables → Actions** as `JETBRAINS_MARKETPLACE_TOKEN`.
 
 Never commit or print token/signing values.
 

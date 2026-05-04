@@ -96,3 +96,7 @@ The plugin requires JDK 17. `mise.toml` pins `temurin-17`.
 | Process helper | `JarifyCli`                                | builds `--config <path>` args, spawns process, pipes stdin           |
 
 Issue tracker: [amfaro/jarify#263](https://github.com/amfaro/jarify/issues/263).
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).

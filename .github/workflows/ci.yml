@@ -19,11 +19,19 @@ jobs:
       - name: Install mise
         uses: jdx/mise-action@v4
 
+      - name: Validate release helper
+        run: |
+          bash -n .mise/tasks/release/prepare
+          mise tasks --hidden | grep '^release:prepare'
+
       - name: Test
         run: mise run test
 
       - name: Build plugin
         run: mise run build
+
+      - name: Verify plugin
+        run: mise run verify
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4

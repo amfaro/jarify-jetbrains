@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'gradle.properties'
+      - 'CHANGELOG.md'
   workflow_dispatch:
     inputs:
       dry_run:

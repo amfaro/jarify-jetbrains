@@ -32,14 +32,48 @@ Before first upload:
 2. Accept Marketplace developer agreement if prompted.
 3. Create vendor profile if prompted.
 4. Run local preflight:
+
    ```bash
    mise run test
    mise run build
    mise run verify
    ```
-5. Upload `build/distributions/*.zip` manually in Marketplace.
+
+5. Upload the plugin ZIP manually in Marketplace:
+   - local build: upload `build/distributions/jarify-jetbrains-<version>.zip`
+   - GitHub Actions artifact: download `jarify-jetbrains-plugin`, unzip the
+     artifact archive once, then upload the inner
+     `jarify-jetbrains-<version>.zip`
+
+Do not upload the GitHub artifact wrapper ZIP directly. Marketplace expects the
+plugin ZIP itself, whose root contains `jarify-jetbrains/lib/*.jar`.
 
 After the plugin exists in Marketplace, automated publish on `main` can succeed.
+
+## Troubleshooting publish failures
+
+If `publish.yml` fails during `mise run publish` / `./gradlew publishPlugin`
+with `Cannot find plugin`, JetBrains Marketplace does not have the initial
+listing yet. CI can update an existing listing, but it cannot create the first
+Marketplace listing for `com.amfaro.jarify`.
+
+Recovery:
+
+1. Run local preflight:
+
+   ```bash
+   mise run test
+   mise run build
+   mise run verify
+   ```
+
+2. Manually upload the plugin ZIP in JetBrains Marketplace to create the
+   `com.amfaro.jarify` listing. If using the GitHub Actions artifact, unzip the
+   downloaded artifact first and upload the inner
+   `jarify-jetbrains-<version>.zip`, not the artifact wrapper ZIP.
+3. Confirm `JETBRAINS_MARKETPLACE_TOKEN` is configured in repository secrets and
+   belongs to the account that owns the listing.
+4. Rerun the `Publish` workflow with `dry_run=false`, or rerun the failed job.
 
 ## Versioning and release notes
 

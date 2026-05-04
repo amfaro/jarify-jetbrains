@@ -10,7 +10,8 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Skip test/build/publish — validate token only'
+        description: >-
+          Skip test/build/publish — validate checkout, version, tag, and token
         type: boolean
         default: true
 
@@ -39,7 +40,8 @@ jobs:
           VERSION: >-
             ${{ steps.version.outputs.value }}
         run: |
-          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q .; then
+          tag_ref="refs/tags/v${VERSION}"
+          if git ls-remote --tags origin "$tag_ref" | grep -q .; then
             echo "Tag v${VERSION} already exists" >> "$GITHUB_STEP_SUMMARY"
             echo "Skipping publish" >> "$GITHUB_STEP_SUMMARY"
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -47,11 +49,31 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate Marketplace token secret
+        if: steps.check.outputs.skip == 'false' || inputs.dry_run
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: >-
+            ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+        run: |
+          if [[ -z "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]]; then
+            msg="JETBRAINS_MARKETPLACE_TOKEN repository secret is required"
+            msg+=" for Marketplace publishing."
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::$msg"
+            exit 1
+          fi
+          echo "JETBRAINS_MARKETPLACE_TOKEN repository secret is present." \
+            >> "$GITHUB_STEP_SUMMARY"
+
       - name: Dry run complete
         if: inputs.dry_run
         run: |
-          echo "dry_run=true: token and checkout validated." >> "$GITHUB_STEP_SUMMARY"
-          echo "::notice::Dry run complete. Token and checkout work correctly."
+          echo "dry_run=true: checkout, version read, tag check," \
+            "and token presence validated." >> "$GITHUB_STEP_SUMMARY"
+          echo "No Marketplace API call or plugin listing check was" \
+            "performed." >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Dry run complete. Token presence was validated;" \
+            "Marketplace auth/listing was not checked."
 
       - name: Test
         if: steps.check.outputs.skip == 'false' && !inputs.dry_run
@@ -73,9 +95,54 @@ jobs:
           path: build/distributions/*.zip
           if-no-files-found: error
 
+      - name: Summarize Marketplace publish target
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
+        run: |
+          echo "Publishing JetBrains Marketplace plugin \`com.amfaro.jarify\`" \
+            "version \`${{ steps.version.outputs.value }}\`." \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo "The first Marketplace listing must already exist from a" \
+            "manual upload before \`publishPlugin\` can update it." \
+            >> "$GITHUB_STEP_SUMMARY"
+
       - name: Publish plugin
         if: steps.check.outputs.skip == 'false' && !inputs.dry_run
-        run: mise run publish
+        run: |
+          set +e
+          mise run publish 2>&1 | tee publish.log
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [[ "$status" -ne 0 ]]; then
+            echo "## Marketplace publish failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`mise run publish\` / \`./gradlew publishPlugin\`" \
+              "exited with status \`$status\`." \
+              >> "$GITHUB_STEP_SUMMARY"
+
+            if grep -q "Cannot find plugin" publish.log; then
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "JetBrains Marketplace returned \`Cannot find plugin\`." \
+                "The first Marketplace listing for \`com.amfaro.jarify\`" \
+                "probably has not been created manually yet." \
+                >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "First-listing recovery:" >> "$GITHUB_STEP_SUMMARY"
+              echo "1. Manually upload \`build/distributions/*.zip\`" \
+                "to JetBrains Marketplace to create the initial listing." \
+                >> "$GITHUB_STEP_SUMMARY"
+              echo "2. Confirm \`JETBRAINS_MARKETPLACE_TOKEN\` belongs to" \
+                "the account that owns that listing." \
+                >> "$GITHUB_STEP_SUMMARY"
+              echo "3. Rerun the \`Publish\` workflow with \`dry_run=false\`" \
+                "or rerun this failed job." \
+                >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "See the job logs and \`docs/releasing.md\` runbook." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
         env:
           JETBRAINS_MARKETPLACE_TOKEN: >-
             ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}

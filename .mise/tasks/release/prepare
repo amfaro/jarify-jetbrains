@@ -68,7 +68,7 @@ Automated release PR (\`${current}\` -> \`${new_version}\`).
 ### Review checklist
 
 - [ ] CHANGELOG entries look accurate
-- [ ] First Marketplace publication already happened manually
+- [ ] First Marketplace listing for com.amfaro.jarify exists (manual upload completed)
 
 ---
 *Automated by \`prepare-release.yml\`*"

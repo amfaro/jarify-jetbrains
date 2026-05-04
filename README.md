@@ -15,19 +15,36 @@ JetBrains IDE plugin providing **formatting** and **diagnostics** for SQL via th
 
 ## Getting Started
 
-### 1. Build the plugin zip
+### 1. Install the plugin
+
+#### From JetBrains Marketplace
+
+After Marketplace approval, install **Jarify** from your IDE:
+
+1. Open **Settings → Plugins → Marketplace**.
+2. Search for `Jarify`.
+3. Click **Install** and restart the IDE if prompted.
+
+If the Marketplace listing is not visible yet, install from a local build.
+
+#### From a local build
+
+Build the plugin ZIP:
 
 ```bash
 mise run build
 ```
 
-This produces `build/distributions/jarify-jetbrains-<ver>.zip`.
+This produces `build/distributions/jarify-jetbrains-<version>.zip`.
 
-### 2. Install the plugin
+Install it in the IDE:
 
-**Settings → Plugins → ⚙ → Install Plugin from Disk** → select the `.zip` from `build/distributions/`.
+1. Open **Settings → Plugins**.
+2. Click the gear icon (**⚙**) and choose **Install Plugin from Disk**.
+3. Select `build/distributions/jarify-jetbrains-<version>.zip`.
+4. Restart the IDE if prompted.
 
-### 3. Install `jarify`
+### 2. Install `jarify`
 
 On first project open, the plugin checks for `jarify` and offers to install it automatically via `uv tool install jarify`. Accept the prompt, or install manually:
 
@@ -35,7 +52,7 @@ On first project open, the plugin checks for `jarify` and offers to install it a
 uv tool install jarify
 ```
 
-### 4. Enable format on save _(optional)_
+### 3. Enable format on save _(optional)_
 
 Formatting on save is controlled by DataGrip/IntelliJ, not the plugin. You must opt in:
 
@@ -45,7 +62,7 @@ Important: JetBrains runs Actions on Save on **explicit save** (`⌘S` / `Ctrl+S
 
 Without this step, the formatter won't run on save — but **Reformat Code (`⌥⌘L` / `Ctrl+Alt+L`)** works immediately with no extra configuration.
 
-### 5. Lint annotations
+### 4. Lint annotations
 
 No setup required. Inline warnings and errors appear automatically as you edit any SQL file.
 
@@ -68,16 +85,20 @@ mise run build            # produce build/distributions/*.zip
 mise run clean            # wipe Gradle build outputs (use before build if zip looks stale)
 mise run verify           # run JetBrains plugin verifier against configured IDE
 mise run test             # run unit tests
-mise run publish          # publish to JetBrains Marketplace (needs JETBRAINS_MARKETPLACE_TOKEN)
+mise run publish          # publish update (needs Marketplace listing + token)
 mise run release:prepare  # prepare or update automated release PR
 ```
 
 Release automation mirrors `../jarify`:
+
 - `prepare-release.yml` opens or updates a `release/vX.Y.Z` PR
 - `publish.yml` runs on `main` pushes that change `gradle.properties` — normally the merged release PR
-- first Marketplace publication still must be done manually
+- `publishPlugin` cannot create the first Marketplace listing; first upload must
+  be manual
 
-Full maintainer runbook: [`docs/releasing.md`](docs/releasing.md).
+Full maintainer runbook: [`docs/releasing.md`](docs/releasing.md), including
+[first Marketplace upload](docs/releasing.md#first-marketplace-upload) and
+[publish failure troubleshooting](docs/releasing.md#troubleshooting-publish-failures).
 
 The plugin requires JDK 17. `mise.toml` pins `temurin-17`.
 
@@ -92,3 +113,7 @@ The plugin requires JDK 17. `mise.toml` pins `temurin-17`.
 | Process helper | `JarifyCli`                                | builds `--config <path>` args, spawns process, pipes stdin           |
 
 Issue tracker: [amfaro/jarify#263](https://github.com/amfaro/jarify/issues/263).
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).

@@ -32,14 +32,39 @@ Before first upload:
 2. Accept Marketplace developer agreement if prompted.
 3. Create vendor profile if prompted.
 4. Run local preflight:
+
    ```bash
    mise run test
    mise run build
    mise run verify
    ```
+
 5. Upload `build/distributions/*.zip` manually in Marketplace.
 
 After the plugin exists in Marketplace, automated publish on `main` can succeed.
+
+## Troubleshooting publish failures
+
+If `publish.yml` fails during `mise run publish` / `./gradlew publishPlugin`
+with `Cannot find plugin`, JetBrains Marketplace does not have the initial
+listing yet. CI can update an existing listing, but it cannot create the first
+Marketplace listing for `com.amfaro.jarify`.
+
+Recovery:
+
+1. Run local preflight:
+
+   ```bash
+   mise run test
+   mise run build
+   mise run verify
+   ```
+
+2. Manually upload `build/distributions/*.zip` in JetBrains Marketplace to
+   create the `com.amfaro.jarify` listing.
+3. Confirm `JETBRAINS_MARKETPLACE_TOKEN` is configured in repository secrets and
+   belongs to the account that owns the listing.
+4. Rerun the `Publish` workflow with `dry_run=false`, or rerun the failed job.
 
 ## Versioning and release notes
 

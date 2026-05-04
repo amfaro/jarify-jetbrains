@@ -68,16 +68,20 @@ mise run build            # produce build/distributions/*.zip
 mise run clean            # wipe Gradle build outputs (use before build if zip looks stale)
 mise run verify           # run JetBrains plugin verifier against configured IDE
 mise run test             # run unit tests
-mise run publish          # publish to JetBrains Marketplace (needs JETBRAINS_MARKETPLACE_TOKEN)
+mise run publish          # publish update (needs Marketplace listing + token)
 mise run release:prepare  # prepare or update automated release PR
 ```
 
 Release automation mirrors `../jarify`:
+
 - `prepare-release.yml` opens or updates a `release/vX.Y.Z` PR
 - `publish.yml` runs on `main` pushes that change `gradle.properties` — normally the merged release PR
-- first Marketplace publication still must be done manually
+- `publishPlugin` cannot create the first Marketplace listing; first upload must
+  be manual
 
-Full maintainer runbook: [`docs/releasing.md`](docs/releasing.md).
+Full maintainer runbook: [`docs/releasing.md`](docs/releasing.md), including
+[first Marketplace upload](docs/releasing.md#first-marketplace-upload) and
+[publish failure troubleshooting](docs/releasing.md#troubleshooting-publish-failures).
 
 The plugin requires JDK 17. `mise.toml` pins `temurin-17`.
 

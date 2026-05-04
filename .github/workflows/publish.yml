@@ -6,6 +6,12 @@ on:
       - main
     paths:
       - 'gradle.properties'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Skip test/build/publish — validate token only'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -40,20 +46,26 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Dry run complete
+        if: inputs.dry_run
+        run: |
+          echo "dry_run=true: token and checkout validated." >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Dry run complete. Token and checkout work correctly."
+
       - name: Test
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: mise run test
 
       - name: Build plugin
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: mise run build
 
       - name: Verify plugin
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: mise run verify
 
       - name: Upload plugin artifact
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         uses: actions/upload-artifact@v4
         with:
           name: jarify-jetbrains-plugin
@@ -61,7 +73,7 @@ jobs:
           if-no-files-found: error
 
       - name: Publish plugin
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: mise run publish
         env:
           JETBRAINS_MARKETPLACE_TOKEN: >-
@@ -71,13 +83,13 @@ jobs:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
 
       - name: Tag release
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: |
           git tag "v${{ steps.version.outputs.value }}"
           git push origin "v${{ steps.version.outputs.value }}"
 
       - name: Create GitHub Release
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && !inputs.dry_run
         run: |
           gh release create "v${{ steps.version.outputs.value }}" \
             --title "v${{ steps.version.outputs.value }}" \

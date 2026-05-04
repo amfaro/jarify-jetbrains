@@ -22,7 +22,7 @@ jobs:
       - name: Validate release helper
         run: |
           bash -n .mise/tasks/release/prepare
-          mise tasks | grep '^release:prepare'
+          mise tasks --hidden | grep '^release:prepare'
 
       - name: Test
         run: mise run test

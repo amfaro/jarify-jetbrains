@@ -39,7 +39,14 @@ Before first upload:
    mise run verify
    ```
 
-5. Upload `build/distributions/*.zip` manually in Marketplace.
+5. Upload the plugin ZIP manually in Marketplace:
+   - local build: upload `build/distributions/jarify-jetbrains-<version>.zip`
+   - GitHub Actions artifact: download `jarify-jetbrains-plugin`, unzip the
+     artifact archive once, then upload the inner
+     `jarify-jetbrains-<version>.zip`
+
+Do not upload the GitHub artifact wrapper ZIP directly. Marketplace expects the
+plugin ZIP itself, whose root contains `jarify-jetbrains/lib/*.jar`.
 
 After the plugin exists in Marketplace, automated publish on `main` can succeed.
 
@@ -60,8 +67,10 @@ Recovery:
    mise run verify
    ```
 
-2. Manually upload `build/distributions/*.zip` in JetBrains Marketplace to
-   create the `com.amfaro.jarify` listing.
+2. Manually upload the plugin ZIP in JetBrains Marketplace to create the
+   `com.amfaro.jarify` listing. If using the GitHub Actions artifact, unzip the
+   downloaded artifact first and upload the inner
+   `jarify-jetbrains-<version>.zip`, not the artifact wrapper ZIP.
 3. Confirm `JETBRAINS_MARKETPLACE_TOKEN` is configured in repository secrets and
    belongs to the account that owns the listing.
 4. Rerun the `Publish` workflow with `dry_run=false`, or rerun the failed job.

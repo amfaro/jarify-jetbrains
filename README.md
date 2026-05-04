@@ -63,13 +63,21 @@ These map 1:1 to the `jarify.executable` and `jarify.configPath` settings in `ja
 ## Development
 
 ```bash
-mise run run-ide   # launch a sandbox IDE with the plugin loaded
-mise run build     # produce build/distributions/jarify-jetbrains-<ver>.zip
-mise run clean     # wipe Gradle build outputs (use before build if zip looks stale)
-mise run verify    # run JetBrains plugin verifier against recommended IDEs
-mise run test      # run unit tests
-mise run publish   # publish to JetBrains Marketplace (needs JETBRAINS_MARKETPLACE_TOKEN)
+mise run run-ide          # launch a sandbox IDE with the plugin loaded
+mise run build            # produce build/distributions/*.zip
+mise run clean            # wipe Gradle build outputs (use before build if zip looks stale)
+mise run verify           # run JetBrains plugin verifier against recommended IDEs
+mise run test             # run unit tests
+mise run publish          # publish to JetBrains Marketplace (needs JETBRAINS_MARKETPLACE_TOKEN)
+mise run release:prepare  # prepare or update automated release PR
 ```
+
+Release automation mirrors `../jarify`:
+- `prepare-release.yml` opens or updates a `release/vX.Y.Z` PR
+- `publish.yml` runs on `main` pushes that change `gradle.properties` — normally the merged release PR
+- first Marketplace publication still must be done manually
+
+Full maintainer runbook: [`docs/releasing.md`](docs/releasing.md).
 
 The plugin requires JDK 17. `mise.toml` pins `temurin-17`.
 

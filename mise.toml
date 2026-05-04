@@ -1,5 +1,9 @@
 [tools]
 java = "temurin-17"
+git-cliff = "latest"
+
+[task_config]
+includes = [".mise/tasks"]
 
 [tasks.run-ide]
 description = "Launch a sandbox IDE with the plugin loaded"
@@ -24,4 +28,3 @@ run = "./gradlew test"
 [tasks.publish]
 description = "Publish to JetBrains Marketplace (requires JETBRAINS_MARKETPLACE_TOKEN)"
 run = "./gradlew publishPlugin"
-

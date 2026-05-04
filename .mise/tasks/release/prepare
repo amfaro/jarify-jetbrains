@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+#MISE description="Prepare or update the release PR"
+#MISE hide=true
+
+set -euo pipefail
+
+new_version=$(git-cliff --bumped-version 2>/dev/null || true)
+new_version="${new_version#v}"
+
+if [[ -z "$new_version" ]]; then
+  echo "No releasable commits. Skipping."
+  exit 0
+fi
+
+current=$(grep '^pluginVersion=' gradle.properties | cut -d= -f2)
+
+if [[ "$current" == "$new_version" ]]; then
+  echo "Already at v${new_version}. Skipping."
+  exit 0
+fi
+
+echo "Bumping ${current} -> ${new_version}"
+
+branch="release/v${new_version}"
+
+git config user.name "github-actions"
+git config user.email "github-actions@github.com"
+git checkout -B "${branch}" origin/main
+
+python3 - "$current" "$new_version" <<'PY'
+from pathlib import Path
+import sys
+current, new = sys.argv[1], sys.argv[2]
+path = Path("gradle.properties")
+text = path.read_text()
+path.write_text(text.replace(f"pluginVersion={current}", f"pluginVersion={new}", 1))
+PY
+git-cliff --tag "v${new_version}" -o CHANGELOG.md
+
+git add gradle.properties CHANGELOG.md
+if git diff --staged --quiet; then
+  echo "Release PR already up to date."
+  exit 0
+fi
+
+git commit -m "chore(release): v${new_version}"
+git push --force-with-lease origin "${branch}"
+
+pr_number=$(gh pr list \
+  --head "${branch}" \
+  --base main \
+  --state open \
+  --json number \
+  --jq '.[0].number // empty')
+
+pr_body="## Release v${new_version}
+
+Automated release PR (\`${current}\` -> \`${new_version}\`).
+
+### What happens on merge
+
+\`publish.yml\` triggers on the \`gradle.properties\` change -> test -> build -> verify -> publish to JetBrains Marketplace -> git tag -> GitHub Release.
+
+### Review checklist
+
+- [ ] CHANGELOG entries look accurate
+- [ ] First Marketplace publication already happened manually
+
+---
+*Automated by \`prepare-release.yml\`*"
+
+if [[ -n "${pr_number}" ]]; then
+  gh pr edit "${pr_number}" \
+    --title "chore(release): v${new_version}" \
+    --body "${pr_body}"
+  echo "Updated PR #${pr_number}"
+else
+  gh pr create \
+    --base main \
+    --head "${branch}" \
+    --title "chore(release): v${new_version}" \
+    --body "${pr_body}"
+fi

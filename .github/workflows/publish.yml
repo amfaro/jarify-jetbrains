@@ -1,0 +1,105 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'gradle.properties'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+
+    steps:
+      - name: Fetch secrets from Doppler
+        uses: dopplerhq/secrets-fetch-action@v2.0.0
+        id: doppler
+        with:
+          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
+          doppler-project: shared
+          doppler-config: prod
+          inject-env-vars: false
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ steps.doppler.outputs.WORKFLOW_CLIENT_ID }}
+          private-key: ${{ steps.doppler.outputs.WORKFLOW_CLIENT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Install mise
+        uses: jdx/mise-action@v4
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(grep '^pluginVersion=' gradle.properties | cut -d= -f2)
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if already released
+        id: check
+        env:
+          VERSION: >-
+            ${{ steps.version.outputs.value }}
+        run: |
+          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q .; then
+            echo "Tag v${VERSION} already exists" >> "$GITHUB_STEP_SUMMARY"
+            echo "Skipping publish" >> "$GITHUB_STEP_SUMMARY"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test
+        if: steps.check.outputs.skip == 'false'
+        run: mise run test
+
+      - name: Build plugin
+        if: steps.check.outputs.skip == 'false'
+        run: mise run build
+
+      - name: Verify plugin
+        if: steps.check.outputs.skip == 'false'
+        run: mise run verify
+
+      - name: Upload plugin artifact
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarify-jetbrains-plugin
+          path: build/distributions/*.zip
+          if-no-files-found: error
+
+      - name: Publish plugin
+        if: steps.check.outputs.skip == 'false'
+        run: mise run publish
+        env:
+          JETBRAINS_MARKETPLACE_TOKEN: >-
+            ${{ secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+
+      - name: Tag release
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git tag "v${{ steps.version.outputs.value }}"
+          git push origin "v${{ steps.version.outputs.value }}"
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          gh release create "v${{ steps.version.outputs.value }}" \
+            --title "v${{ steps.version.outputs.value }}" \
+            --generate-notes \
+            build/distributions/*
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}

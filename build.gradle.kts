@@ -43,7 +43,12 @@ intellijPlatform {
         password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
     pluginVerification {
-        ides { recommended() }
+        ides {
+            ide(
+                providers.gradleProperty("platformType"),
+                providers.gradleProperty("platformVersion"),
+            )
+        }
     }
 }
 

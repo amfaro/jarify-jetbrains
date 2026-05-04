@@ -66,7 +66,7 @@ These map 1:1 to the `jarify.executable` and `jarify.configPath` settings in `ja
 mise run run-ide          # launch a sandbox IDE with the plugin loaded
 mise run build            # produce build/distributions/*.zip
 mise run clean            # wipe Gradle build outputs (use before build if zip looks stale)
-mise run verify           # run JetBrains plugin verifier against recommended IDEs
+mise run verify           # run JetBrains plugin verifier against configured IDE
 mise run test             # run unit tests
 mise run publish          # publish to JetBrains Marketplace (needs JETBRAINS_MARKETPLACE_TOKEN)
 mise run release:prepare  # prepare or update automated release PR

@@ -9,16 +9,26 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 
-/** Phase 1 gate (issue #22) for the linter and formatter entry points. */
+/** Gates the linter and formatter entry points on a DuckDB data source. */
 internal object DuckDbDetection {
 
     fun shouldRun(project: Project, file: PsiFile): Boolean {
         if (!JarifySettings.getInstance().onlyForDuckDb) return true
-        if (!projectHasDuckDbDataSource(project)) {
+        return decide(
+            projectHasDuckDb = projectHasDuckDbDataSource(project),
+            consoleAttachedIsDuckDb = { consoleAttachedIsDuckDb(project, file) },
+        )
+    }
+
+    internal fun decide(
+        projectHasDuckDb: Boolean,
+        consoleAttachedIsDuckDb: () -> Boolean?,
+    ): Boolean {
+        if (!projectHasDuckDb) {
             LOG.debug("Skipping jarify: onlyForDuckDb is on but no DuckDB data source is configured")
             return false
         }
-        if (consoleAttachedIsDuckDb(project, file) == false) {
+        if (consoleAttachedIsDuckDb() == false) {
             LOG.debug("Skipping jarify: SQL console is attached to a non-DuckDB data source")
             return false
         }

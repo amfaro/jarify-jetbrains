@@ -41,4 +41,35 @@ class DuckDbDetectionTest {
         assertFalse(DuckDbDetection.isDuckDb(null, null))
         assertFalse(DuckDbDetection.isDuckDb("", ""))
     }
+
+    // --- decide() — issue #23 acceptance for per-file data-source gating ---
+
+    @Test fun `decide skips when project has no duckdb data source`() {
+        assertFalse(DuckDbDetection.decide(projectHasDuckDb = false) { null })
+    }
+
+    @Test fun `decide does not invoke console lookup when project lacks duckdb`() {
+        var consoleLookupCalled = false
+        DuckDbDetection.decide(projectHasDuckDb = false) {
+            consoleLookupCalled = true
+            true
+        }
+        assertFalse("console lookup must short-circuit", consoleLookupCalled)
+    }
+
+    @Test fun `decide runs for standalone files when project has duckdb`() {
+        // Standalone .sql files (not attached to a console) return null and
+        // must keep Phase 1 behavior: run if the project has any DuckDB source.
+        assertTrue(DuckDbDetection.decide(projectHasDuckDb = true) { null })
+    }
+
+    @Test fun `decide runs when console is attached to duckdb`() {
+        assertTrue(DuckDbDetection.decide(projectHasDuckDb = true) { true })
+    }
+
+    @Test fun `decide skips when console is attached to a non-duckdb source`() {
+        // Mixed-data-source case: project has both DuckDB and Postgres, file
+        // is the buffer of a Postgres console. Phase 2 must skip.
+        assertFalse(DuckDbDetection.decide(projectHasDuckDb = true) { false })
+    }
 }

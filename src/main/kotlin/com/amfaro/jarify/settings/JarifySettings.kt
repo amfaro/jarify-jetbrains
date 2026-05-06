@@ -14,6 +14,7 @@ class JarifySettings : SimplePersistentStateComponent<JarifySettings.State>(Stat
     class State : BaseState() {
         var executable by string("jarify")
         var configPath by string("")
+        var onlyForDuckDb by property(true)
     }
 
     val executable: String
@@ -22,9 +23,13 @@ class JarifySettings : SimplePersistentStateComponent<JarifySettings.State>(Stat
     val configPath: String?
         get() = state.configPath?.takeIf { it.isNotBlank() }
 
-    fun update(executable: String, configPath: String) {
+    val onlyForDuckDb: Boolean
+        get() = state.onlyForDuckDb
+
+    fun update(executable: String, configPath: String, onlyForDuckDb: Boolean) {
         state.executable = executable.ifBlank { "jarify" }
         state.configPath = configPath
+        state.onlyForDuckDb = onlyForDuckDb
     }
 
     companion object {

@@ -1,6 +1,7 @@
 package com.amfaro.jarify.linter
 
 import com.amfaro.jarify.cli.JarifyCli
+import com.amfaro.jarify.duckdb.DuckDbDetection
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.intellij.lang.annotation.AnnotationHolder
@@ -34,6 +35,7 @@ class JarifyExternalAnnotator :
     data class AnnotationResult(val items: List<LintItem>, val document: Document)
 
     override fun collectInformation(file: PsiFile): CollectInfo? {
+        if (!DuckDbDetection.shouldRun(file.project, file)) return null
         val vfile = file.virtualFile ?: return null
         val doc = FileDocumentManager.getInstance().getDocument(vfile) ?: return null
         return CollectInfo(vfile.path, doc.text, doc)

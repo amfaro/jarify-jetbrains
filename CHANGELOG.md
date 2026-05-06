@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.0] - 2026-05-06
+### Features
+
+- gate linter and formatter on DuckDB data source ([#22](https://github.com/amfaro/jarify-jetbrains/pull/22)) ([#27](https://github.com/amfaro/jarify-jetbrains/pull/27)) ([#27](https://github.com/amfaro/jarify-jetbrains/pull/27))
+
 ## [0.1.2] - 2026-05-06
 ### Documentation
 

@@ -3,14 +3,7 @@
     <name>Jarify</name>
     <vendor url="https://github.com/amfaro">amfaro</vendor>
 
-    <description><![CDATA[
-      Formatting and diagnostics for SQL via the <a href="https://github.com/amfaro/jarify">jarify</a> CLI.
-      <ul>
-        <li>Reformat Code / format-on-save via <code>jarify fmt</code></li>
-        <li>Inline diagnostics via <code>jarify lint --format json</code></li>
-        <li>Auto-installs <code>jarify</code> with <code>uv tool install jarify</code> if missing</li>
-      </ul>
-    ]]></description>
+    <!-- description is injected at build time from README.md (see build.gradle.kts pluginConfiguration). -->
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.database</depends>

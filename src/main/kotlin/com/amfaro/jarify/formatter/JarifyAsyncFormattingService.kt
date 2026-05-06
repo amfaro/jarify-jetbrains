@@ -1,6 +1,7 @@
 package com.amfaro.jarify.formatter
 
 import com.amfaro.jarify.cli.JarifyCli
+import com.amfaro.jarify.duckdb.DuckDbDetection
 import com.intellij.formatting.service.AsyncDocumentFormattingService
 import com.intellij.formatting.service.AsyncFormattingRequest
 import com.intellij.formatting.service.FormattingService
@@ -18,6 +19,7 @@ class JarifyAsyncFormattingService : AsyncDocumentFormattingService() {
         EnumSet.of(FormattingService.Feature.FORMAT_FRAGMENTS)
 
     override fun canFormat(file: PsiFile): Boolean {
+        if (!DuckDbDetection.shouldRun(file.project, file)) return false
         // Walk the language hierarchy — covers SQL dialects (MySQL, PostgreSQL, etc.)
         // that extend SqlLanguage but have their own IDs.
         var lang: com.intellij.lang.Language? = file.language

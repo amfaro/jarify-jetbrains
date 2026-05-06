@@ -1,15 +1,16 @@
 # Jarify for JetBrains
 
+<!-- Plugin description -->
 JetBrains IDE plugin providing **formatting** and **diagnostics** for SQL via the [`jarify`](https://github.com/amfaro/jarify) CLI. Mirrors [`jarify-vscode`](https://github.com/amfaro/jarify-vscode) — same CLI calls, same UX, different host.
 
-> [!WARNING]
-> **DuckDB only.** This plugin is a thin wrapper around [`jarify`](https://github.com/amfaro/jarify), which formats and lints **DuckDB SQL exclusively**. Using it with PostgreSQL, MySQL, SQLite, or any other SQL dialect will produce incorrect formatting and misleading diagnostics.
+> **⚠️ DuckDB only.** This plugin is a thin wrapper around [`jarify`](https://github.com/amfaro/jarify), which formats and lints **DuckDB SQL exclusively**. Using it with PostgreSQL, MySQL, SQLite, or any other SQL dialect will produce incorrect formatting and misleading diagnostics.
 
 ## Features
 
 - **Reformat Code / format on save** — pipes the active buffer through `jarify fmt --stdin-filename <file> -`
 - **Inline diagnostics** — runs `jarify lint --format json --stdin-filename <file> -` and surfaces errors and warnings via the standard IntelliJ `ExternalAnnotator` pipeline
 - **Auto-install** — on first project open, if `jarify` is not on `$PATH` the plugin offers to run `uv tool install jarify`
+<!-- Plugin description end -->
 
 ## Requirements
 

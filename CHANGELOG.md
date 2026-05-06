@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.2] - 2026-05-06
+### Documentation
+
+- sync plugin description from README.md ([#25](https://github.com/amfaro/jarify-jetbrains/pull/25)) ([#25](https://github.com/amfaro/jarify-jetbrains/pull/25))
+
 ## [0.1.1] - 2026-05-06
 ### Bug Fixes
 

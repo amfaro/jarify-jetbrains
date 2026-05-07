@@ -4,6 +4,8 @@
 JetBrains IDE plugin providing **formatting** and **diagnostics** for SQL via the [`jarify`](https://github.com/amfaro/jarify) CLI. Mirrors [`jarify-vscode`](https://github.com/amfaro/jarify-vscode) — same CLI calls, same UX, different host.
 
 > **⚠️ DuckDB only.** This plugin is a thin wrapper around [`jarify`](https://github.com/amfaro/jarify), which formats and lints **DuckDB SQL exclusively**. Using it with PostgreSQL, MySQL, SQLite, or any other SQL dialect will produce incorrect formatting and misleading diagnostics.
+>
+> By default the plugin auto-detects DuckDB from project data sources and the active SQL console. For a standalone `.sql` file with no DuckDB data source, right-click the editor → **Change Dialect → DuckDB** to opt that file in.
 
 ## Features
 

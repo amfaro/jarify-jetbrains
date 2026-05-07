@@ -45,12 +45,20 @@ class DuckDbDetectionTest {
     // --- decide() — issue #23 acceptance for per-file data-source gating ---
 
     @Test fun `decide skips when project has no duckdb data source`() {
-        assertFalse(DuckDbDetection.decide(projectHasDuckDb = false) { null })
+        assertFalse(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { false },
+                projectHasDuckDb = false,
+            ) { null },
+        )
     }
 
     @Test fun `decide does not invoke console lookup when project lacks duckdb`() {
         var consoleLookupCalled = false
-        DuckDbDetection.decide(projectHasDuckDb = false) {
+        DuckDbDetection.decide(
+            fileMappedToDuckDbDialect = { false },
+            projectHasDuckDb = false,
+        ) {
             consoleLookupCalled = true
             true
         }
@@ -60,16 +68,64 @@ class DuckDbDetectionTest {
     @Test fun `decide runs for standalone files when project has duckdb`() {
         // Standalone .sql files (not attached to a console) return null and
         // must keep Phase 1 behavior: run if the project has any DuckDB source.
-        assertTrue(DuckDbDetection.decide(projectHasDuckDb = true) { null })
+        assertTrue(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { false },
+                projectHasDuckDb = true,
+            ) { null },
+        )
     }
 
     @Test fun `decide runs when console is attached to duckdb`() {
-        assertTrue(DuckDbDetection.decide(projectHasDuckDb = true) { true })
+        assertTrue(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { false },
+                projectHasDuckDb = true,
+            ) { true },
+        )
     }
 
     @Test fun `decide skips when console is attached to a non-duckdb source`() {
         // Mixed-data-source case: project has both DuckDB and Postgres, file
         // is the buffer of a Postgres console. Phase 2 must skip.
-        assertFalse(DuckDbDetection.decide(projectHasDuckDb = true) { false })
+        assertFalse(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { false },
+                projectHasDuckDb = true,
+            ) { false },
+        )
+    }
+
+    // --- decide() — issue #24 acceptance for the dialect-mapping fourth gate ---
+
+    @Test fun `decide runs when file is mapped to duckdb dialect even without a project data source`() {
+        assertTrue(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { true },
+                projectHasDuckDb = false,
+            ) { null },
+        )
+    }
+
+    @Test fun `decide runs when file is mapped to duckdb dialect even if console is non-duckdb`() {
+        // Explicit user mapping wins over the per-file console gate.
+        assertTrue(
+            DuckDbDetection.decide(
+                fileMappedToDuckDbDialect = { true },
+                projectHasDuckDb = true,
+            ) { false },
+        )
+    }
+
+    @Test fun `decide does not consult data-source gates when dialect mapping wins`() {
+        var consoleLookupCalled = false
+        DuckDbDetection.decide(
+            fileMappedToDuckDbDialect = { true },
+            projectHasDuckDb = false,
+        ) {
+            consoleLookupCalled = true
+            true
+        }
+        assertFalse("console lookup must short-circuit when dialect mapping wins", consoleLookupCalled)
     }
 }

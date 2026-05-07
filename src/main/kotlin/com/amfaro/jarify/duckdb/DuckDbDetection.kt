@@ -1,5 +1,6 @@
 package com.amfaro.jarify.duckdb
 
+import com.amfaro.jarify.dialect.DuckDbSqlDialect
 import com.amfaro.jarify.settings.JarifySettings
 import com.intellij.database.console.JdbcConsole
 import com.intellij.database.model.DasDataSource
@@ -8,22 +9,26 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import com.intellij.sql.dialects.SqlDialectMappings
 
-/** Gates the linter and formatter entry points on a DuckDB data source. */
+/** Gates the linter and formatter entry points on DuckDB-ness — explicit dialect mapping, project data source, or attached console. */
 internal object DuckDbDetection {
 
     fun shouldRun(project: Project, file: PsiFile): Boolean {
         if (!JarifySettings.getInstance().onlyForDuckDb) return true
         return decide(
+            fileMappedToDuckDbDialect = { fileIsMappedToDuckDbDialect(project, file) },
             projectHasDuckDb = projectHasDuckDbDataSource(project),
             consoleAttachedIsDuckDb = { consoleAttachedIsDuckDb(project, file) },
         )
     }
 
     internal fun decide(
+        fileMappedToDuckDbDialect: () -> Boolean,
         projectHasDuckDb: Boolean,
         consoleAttachedIsDuckDb: () -> Boolean?,
     ): Boolean {
+        if (fileMappedToDuckDbDialect()) return true
         if (!projectHasDuckDb) {
             LOG.debug("Skipping jarify: onlyForDuckDb is on but no DuckDB data source is configured")
             return false
@@ -73,6 +78,19 @@ internal object DuckDbDetection {
         } catch (e: Exception) {
             LOG.debug("Failed to resolve console data source for file; deferring to project check", e)
             null
+        }
+    }
+
+    // On failure, defer to the data-source gates — the override is opt-in, not a fallback.
+    private fun fileIsMappedToDuckDbDialect(project: Project, file: PsiFile): Boolean {
+        val vfile = file.virtualFile ?: return false
+        return try {
+            SqlDialectMappings.getInstance(project).getMapping(vfile) === DuckDbSqlDialect.INSTANCE
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: Exception) {
+            LOG.debug("Failed to resolve SQL dialect mapping for file; deferring to data-source gates", e)
+            false
         }
     }
 

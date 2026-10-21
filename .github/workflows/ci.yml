@@ -25,9 +25,9 @@ jobs:
             caches/*/transforms
 
       - name: Install mise
-        uses: amfaro/actions/setup-mise@v1
+        uses: jdx/mise-action@v5
         with:
-          tools: java
+          install_args: java
 
       - name: Validate release helper
         run: |

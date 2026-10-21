@@ -34,9 +34,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install mise
-        uses: amfaro/actions/setup-mise@v1
+        uses: jdx/mise-action@v5
         with:
-          tools: git-cliff
+          install_args: git-cliff
 
       - name: Prepare release
         run: mise run release:prepare

@@ -34,7 +34,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install mise
-        uses: jdx/mise-action@v4
+        uses: jdx/mise-action@v5
+        with:
+          install_args: git-cliff
 
       - name: Prepare release
         run: mise run release:prepare

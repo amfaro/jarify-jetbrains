@@ -33,7 +33,7 @@ tasks:
     with:
       repository: https://github.com/amfaro/jarify-jetbrains.git
       ref: ${{ init.commit-sha }}
-      github-token: ${{ github.token }}
+      # Public repo: no token needed, and RWX withholds github.token on PR runs.
 
   - key: mise
     use: code

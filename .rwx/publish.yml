@@ -6,8 +6,10 @@
 # confirms the Marketplace token is present.
 #
 # Credentials: RWX vault jarify-jetbrains (locked to main, public-repo access)
-# holds the Marketplace token and signing secrets. amfaro-rwx-workflows-management
-# (vault rwx-github-workflows) pushes the tag and creates the release.
+# holds the Marketplace token. amfaro-rwx-workflows-management (vault
+# rwx-github-workflows) pushes the tag and creates the release. The plugin is
+# published unsigned: RWX may fail on missing vault secrets, so the signing
+# secrets are not referenced until they are created.
 on:
   cli:
     init:
@@ -123,9 +125,6 @@ tasks:
       gh release create "v${version}" --title "v${version}" --generate-notes build/distributions/*
     env:
       JETBRAINS_MARKETPLACE_TOKEN: ${{ vaults.jarify-jetbrains.secrets.JETBRAINS_MARKETPLACE_TOKEN }}
-      CERTIFICATE_CHAIN: ${{ vaults.jarify-jetbrains.secrets.CERTIFICATE_CHAIN }}
-      PRIVATE_KEY: ${{ vaults.jarify-jetbrains.secrets.PRIVATE_KEY }}
-      PRIVATE_KEY_PASSWORD: ${{ vaults.jarify-jetbrains.secrets.PRIVATE_KEY_PASSWORD }}
       GH_TOKEN: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
     outputs:
       artifacts:

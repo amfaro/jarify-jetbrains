@@ -116,11 +116,15 @@ with public-repo access). No Doppler is required.
 
 ### Signing secrets
 
+Not set up yet. `.rwx/publish.yml` does not reference these, so releases are
+unsigned. To enable signing, add them to the `jarify-jetbrains` vault and pass
+them in the `publish` task's `env`.
+
 | Secret | Where used | Notes |
 |---|---|---|
-| `PRIVATE_KEY` | `.rwx/publish.yml` / Gradle signing | plugin signing private key |
-| `PRIVATE_KEY_PASSWORD` | `.rwx/publish.yml` / Gradle signing | password for private key |
-| `CERTIFICATE_CHAIN` | `.rwx/publish.yml` / Gradle signing | certificate chain for signed release |
+| `PRIVATE_KEY` | Gradle signing | plugin signing private key |
+| `PRIVATE_KEY_PASSWORD` | Gradle signing | password for private key |
+| `CERTIFICATE_CHAIN` | Gradle signing | certificate chain for signed release |
 
 ### JetBrains Marketplace token setup
 

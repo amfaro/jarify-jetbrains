@@ -11,11 +11,10 @@ This repo mirrors `../jarify` release flow: automated release PR prep, then auto
    - bumped `pluginVersion`
    - any release-blocking verifier failures
 4. Merge release PR.
-5. `publish.yml` runs on the `gradle.properties` change on `main` — normally from that merged release PR — then:
+5. `.rwx/publish.yml` (RWX) runs on the `gradle.properties` or `CHANGELOG.md` change on `main` — normally from that merged release PR — then:
    - `mise run test`
    - `mise run build`
    - `mise run verify`
-   - upload `build/distributions/*.zip`
    - `mise run publish`
    - create git tag `vX.Y.Z`
    - create GitHub Release with generated notes and plugin ZIP asset
@@ -42,7 +41,7 @@ Before first upload:
 5. Upload the plugin ZIP manually in Marketplace:
    - local build: upload `build/distributions/jarify-jetbrains-<version>.zip`
    - CI artifact: download `jarify-jetbrains-plugin` from the RWX `build`
-     task (or the GitHub Actions publish run), unzip the artifact archive once, then upload the inner
+     or `publish` task, unzip the artifact archive once, then upload the inner
      `jarify-jetbrains-<version>.zip`
 
 Do not upload the GitHub artifact wrapper ZIP directly. Marketplace expects the
@@ -52,7 +51,7 @@ After the plugin exists in Marketplace, automated publish on `main` can succeed.
 
 ## Troubleshooting publish failures
 
-If `publish.yml` fails during `mise run publish` / `./gradlew publishPlugin`
+If `.rwx/publish.yml` fails during `mise run publish` / `./gradlew publishPlugin`
 with `Cannot find plugin`, JetBrains Marketplace does not have the initial
 listing yet. CI can update an existing listing, but it cannot create the first
 Marketplace listing for `com.amfaro.jarify`.
@@ -71,9 +70,9 @@ Recovery:
    `com.amfaro.jarify` listing. If using a CI artifact, unzip the
    downloaded artifact first and upload the inner
    `jarify-jetbrains-<version>.zip`, not the artifact wrapper ZIP.
-3. Confirm `JETBRAINS_MARKETPLACE_TOKEN` is configured in repository secrets and
+3. Confirm `JETBRAINS_MARKETPLACE_TOKEN` is set in the `jarify-jetbrains` RWX vault and
    belongs to the account that owns the listing.
-4. Rerun the `Publish` workflow with `dry_run=false`, or rerun the failed job.
+4. Run `rwx dispatch jarify-jetbrains-publish --param dry-run=false`, or retry the failed task.
 
 ## Versioning and release notes
 
@@ -98,36 +97,37 @@ Artifacts land in `build/distributions/*.zip`.
 ## Secrets
 
 Release PR preparation runs on RWX with the `amfaro-rwx-workflows-management`
-GitHub App token from the `rwx-github-workflows` RWX vault. Publishing still runs
-on GitHub Actions with the repository secrets below. No Doppler is required.
+GitHub App token from the `rwx-github-workflows` RWX vault. Publishing runs on
+RWX with the secrets below in the `jarify-jetbrains` RWX vault (locked to `main`,
+with public-repo access). No Doppler is required.
 
 ### Automatic
 
 | Secret | Where used | Notes |
 |---|---|---|
 | `amfaro-rwx-workflows-management` App token | `.rwx/prepare-release.yml` | RWX vault `rwx-github-workflows`; used for release-branch push and PR creation |
-| `GITHUB_TOKEN` | `publish.yml` | provided automatically by GitHub Actions; used for checkout, tag push, and GitHub Release |
+| `amfaro-rwx-workflows-management` App token | `.rwx/publish.yml` | RWX vault `rwx-github-workflows`; used for tag push and GitHub Release |
 
-### Required repository secrets
-
-| Secret | Where used | Notes |
-|---|---|---|
-| `JETBRAINS_MARKETPLACE_TOKEN` | `publish.yml` | Marketplace personal access token used by `publishPlugin` |
-
-### Optional signing secrets
+### Required vault secrets
 
 | Secret | Where used | Notes |
 |---|---|---|
-| `PRIVATE_KEY` | `publish.yml` / Gradle signing | plugin signing private key |
-| `PRIVATE_KEY_PASSWORD` | `publish.yml` / Gradle signing | password for private key |
-| `CERTIFICATE_CHAIN` | `publish.yml` / Gradle signing | certificate chain for signed release |
+| `JETBRAINS_MARKETPLACE_TOKEN` | `.rwx/publish.yml` | Marketplace personal access token used by `publishPlugin` |
+
+### Signing secrets
+
+| Secret | Where used | Notes |
+|---|---|---|
+| `PRIVATE_KEY` | `.rwx/publish.yml` / Gradle signing | plugin signing private key |
+| `PRIVATE_KEY_PASSWORD` | `.rwx/publish.yml` / Gradle signing | password for private key |
+| `CERTIFICATE_CHAIN` | `.rwx/publish.yml` / Gradle signing | certificate chain for signed release |
 
 ### JetBrains Marketplace token setup
 
 1. Sign in to JetBrains Marketplace / Hub with publishing account.
 2. Open `My Tokens`.
 3. Create personal access token for plugin publishing.
-4. Store it in this repo under **Settings → Secrets and variables → Actions** as `JETBRAINS_MARKETPLACE_TOKEN`.
+4. Store it in the `jarify-jetbrains` RWX vault as `JETBRAINS_MARKETPLACE_TOKEN`.
 
 Never commit or print token/signing values.
 
@@ -136,7 +136,7 @@ Never commit or print token/signing values.
 - `.rwx/ci.yml` — RWX PR/main validation; `mise run verify` runs on `main`
 - `.rwx/prepare-release.yml` — RWX: create or update release PR (`rwx dispatch jarify-jetbrains-prepare-release` to force)
 - `.rwx/update-rwx-packages.yml` — RWX: weekly same-major RWX package update PR
-- `.github/workflows/publish.yml` — publish on `main` when `gradle.properties` changes
+- `.rwx/publish.yml` — RWX: publish on `main` when `gradle.properties` or `CHANGELOG.md` changes (`rwx dispatch jarify-jetbrains-publish` dry-runs by default)
 
 ## Important caveats
 

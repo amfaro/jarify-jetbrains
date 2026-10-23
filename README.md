@@ -96,7 +96,7 @@ mise run release:prepare  # prepare or update automated release PR
 Release automation mirrors `../jarify`:
 
 - `.rwx/prepare-release.yml` (RWX) opens or updates a `release/vX.Y.Z` PR
-- `.github/workflows/publish.yml` runs on `main` pushes that change `gradle.properties` — normally the merged release PR
+- `.rwx/publish.yml` (RWX) publishes on `main` pushes that change `gradle.properties` or `CHANGELOG.md` — normally the merged release PR
 - `publishPlugin` cannot create the first Marketplace listing; first upload must
   be manual
 

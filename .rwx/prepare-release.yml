@@ -1,0 +1,100 @@
+# Open or update the release PR (release/vX.Y.Z) from conventional commits.
+# Runs on main pushes that touch release paths, or on demand:
+#   rwx dispatch jarify-jetbrains-prepare-release [--param force-version=0.3.0]
+# force-version bypasses git-cliff and the already-at-version guard.
+#
+# Credentials: amfaro-rwx-workflows-management (RWX vault, Contents and Pull
+# Requests write) pushes the release branch and opens the PR. An App token,
+# unlike GITHUB_TOKEN, lets the release PR trigger .rwx/ci.yml.
+#
+# Merging the release PR still publishes through .github/workflows/publish.yml.
+on:
+  cli:
+    init:
+      commit-sha: ${{ event.git.sha }}
+      base-ref: ${{ event.git.sha }}
+      head-ref: ${{ event.git.sha }}
+      force: false
+      force-version: ''
+
+  dispatch:
+    key: jarify-jetbrains-prepare-release
+    params:
+      - key: force-version
+        name: Override version (e.g. 0.1.0)
+        description: Bypasses git-cliff and the already-at-version guard. Use for bootstrap releases.
+        required: false
+        default: ''
+    init:
+      commit-sha: ${{ event.git.sha }}
+      base-ref: ${{ event.git.sha }}
+      head-ref: ${{ event.git.sha }}
+      force: true
+      force-version: ${{ event.dispatch.params.force-version }}
+
+  github:
+    push:
+      if: ${{ event.git.branch == 'main' }}
+      init:
+        commit-sha: ${{ event.git.sha }}
+        base-ref: ${{ event.github.push.before }}
+        head-ref: ${{ event.git.sha }}
+        force: false
+        force-version: ''
+
+concurrency-pools:
+  - id: amfaro/jarify-jetbrains:prepare-release
+    capacity: 1
+    on-overflow: queue
+
+base:
+  image: ubuntu:24.04
+  config: rwx/base 1.2.0
+
+tasks:
+  - key: github-cli
+    call: github/install-cli 1.1.0
+
+  - key: code
+    call: git/clone 2.2.0
+    with:
+      repository: https://github.com/amfaro/jarify-jetbrains.git
+      ref: ${{ init.commit-sha }}
+      fetch-full-depth: true
+      preserve-git-dir: true
+      github-token: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+
+  - key: mise
+    use: code
+    call: gmatter/setup-mise 1.1.0
+    filter:
+      - mise.toml
+    with:
+      tools: git-cliff
+
+  - key: release-paths
+    use: github-cli
+    call: github/compare 1.1.1
+    with:
+      repository: amfaro/jarify-jetbrains
+      base-ref: ${{ init.base-ref }}
+      head-ref: ${{ init.head-ref }}
+      github-token: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+      patterns: |
+        src/**
+        docs/**
+        README.md
+        build.gradle.kts
+        gradle.properties
+        cliff.toml
+        .mise/tasks/release/**
+
+  - key: prepare-release
+    use: [github-cli, mise, release-paths]
+    if: ${{ init.force || tasks.release-paths.values.have-changes }}
+    cache: false
+    run: mise run release:prepare
+    env:
+      FORCE_VERSION: ${{ init.force-version }}
+      GITHUB_TOKEN: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+      GH_TOKEN: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}

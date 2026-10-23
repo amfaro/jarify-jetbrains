@@ -71,7 +71,7 @@ Automated release PR (\`${current}\` -> \`${new_version}\`).
 - [ ] First Marketplace listing for com.amfaro.jarify exists (manual upload completed)
 
 ---
-*Automated by \`prepare-release.yml\`*"
+*Automated by \`.rwx/prepare-release.yml\`*"
 
 if [[ -n "${pr_number}" ]]; then
   gh pr edit "${pr_number}" \

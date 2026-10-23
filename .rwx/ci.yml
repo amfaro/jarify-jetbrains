@@ -1,0 +1,81 @@
+# Pull request and main checks: test, build, and (on main) verify the plugin.
+# Runs without vault credentials, so it is safe for candidate code, including
+# rwx/update-packages-github pin-only PRs.
+#
+# Gradle caching: gradle-deps is filtered to the build inputs, so the Gradle
+# home it fills (dependencies and the IntelliJ Platform download) is reused by
+# RWX until one of those files changes.
+on:
+  cli:
+    init:
+      commit-sha: ${{ event.git.sha }}
+      verify: true
+
+  github:
+    pull_request:
+      init:
+        commit-sha: ${{ event.git.sha }}
+        verify: false
+
+    push:
+      if: ${{ event.git.branch == 'main' }}
+      init:
+        commit-sha: ${{ event.git.sha }}
+        verify: true
+
+base:
+  image: ubuntu:24.04
+  config: rwx/base 1.2.0
+
+tasks:
+  - key: code
+    call: git/clone 2.2.0
+    with:
+      repository: https://github.com/amfaro/jarify-jetbrains.git
+      ref: ${{ init.commit-sha }}
+      # Public repo: no token needed, and RWX withholds github.token on PR runs.
+
+  - key: mise
+    use: code
+    call: gmatter/setup-mise 1.1.0
+    filter:
+      - mise.toml
+    with:
+      tools: java
+
+  - key: gradle-deps
+    use: mise
+    filter:
+      - mise.toml
+      - build.gradle.kts
+      - settings.gradle.kts
+      - gradle.properties
+      - gradle/**
+      - gradlew
+    run: ./gradlew --no-daemon dependencies
+
+  - key: validate-release-helper
+    use: mise
+    filter:
+      - mise.toml
+      - .mise/tasks/**
+    run: |
+      bash -n .mise/tasks/release/prepare
+      mise tasks --hidden | grep '^release:prepare'
+
+  - key: test
+    use: gradle-deps
+    run: mise run test
+
+  - key: build
+    use: gradle-deps
+    run: mise run build
+    outputs:
+      artifacts:
+        - key: jarify-jetbrains-plugin
+          path: build/distributions
+
+  - key: verify
+    use: build
+    if: ${{ init.verify }}
+    run: mise run verify

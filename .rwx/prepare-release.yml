@@ -7,7 +7,7 @@
 # Requests write) pushes the release branch and opens the PR. An App token,
 # unlike GITHUB_TOKEN, lets the release PR trigger .rwx/ci.yml.
 #
-# Merging the release PR still publishes through .github/workflows/publish.yml.
+# Merging the release PR publishes through .rwx/publish.yml.
 on:
   cli:
     init:

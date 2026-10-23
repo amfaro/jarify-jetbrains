@@ -1,0 +1,133 @@
+# Publish the plugin to JetBrains Marketplace, then tag v<version> and create
+# the GitHub release. Runs on main pushes that touch gradle.properties or
+# CHANGELOG.md (normally the merged release PR), or on demand:
+#   rwx dispatch jarify-jetbrains-publish [--param dry-run=false]
+# dry-run (default for dispatch) only reads the version, checks the tag, and
+# confirms the Marketplace token is present.
+#
+# Credentials: RWX vault jarify-jetbrains (locked to main, public-repo access)
+# holds the Marketplace token and signing secrets. amfaro-rwx-workflows-management
+# (vault rwx-github-workflows) pushes the tag and creates the release.
+on:
+  cli:
+    init:
+      commit-sha: ${{ event.git.sha }}
+      base-ref: ${{ event.git.sha }}
+      head-ref: ${{ event.git.sha }}
+      force: true
+      dry-run: 'true'
+
+  dispatch:
+    key: jarify-jetbrains-publish
+    params:
+      - key: dry-run
+        name: Dry run
+        description: Skip test/build/publish; validate version, tag, and token only.
+        required: false
+        default: 'true'
+    init:
+      commit-sha: ${{ event.git.sha }}
+      base-ref: ${{ event.git.sha }}
+      head-ref: ${{ event.git.sha }}
+      force: true
+      dry-run: ${{ event.dispatch.params.dry-run }}
+
+  github:
+    push:
+      if: ${{ event.git.branch == 'main' }}
+      init:
+        commit-sha: ${{ event.git.sha }}
+        base-ref: ${{ event.github.push.before }}
+        head-ref: ${{ event.git.sha }}
+        force: false
+        dry-run: 'false'
+
+concurrency-pools:
+  - id: amfaro/jarify-jetbrains:publish
+    capacity: 1
+    on-overflow: queue
+
+base:
+  image: ubuntu:24.04
+  config: rwx/base 1.2.0
+
+tasks:
+  - key: github-cli
+    call: github/install-cli 1.1.0
+
+  - key: code
+    call: git/clone 2.2.0
+    with:
+      repository: https://github.com/amfaro/jarify-jetbrains.git
+      ref: ${{ init.commit-sha }}
+      preserve-git-dir: true
+      github-token: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+
+  - key: mise
+    use: code
+    call: gmatter/setup-mise 1.1.0
+    filter:
+      - mise.toml
+    with:
+      tools: java
+
+  - key: release-paths
+    use: github-cli
+    call: github/compare 1.1.1
+    with:
+      repository: amfaro/jarify-jetbrains
+      base-ref: ${{ init.base-ref }}
+      head-ref: ${{ init.head-ref }}
+      github-token: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+      patterns: |
+        gradle.properties
+        CHANGELOG.md
+
+  - key: check
+    use: [mise, release-paths]
+    if: ${{ init.force || tasks.release-paths.values.have-changes }}
+    cache: false
+    run: |
+      version=$(grep '^pluginVersion=' gradle.properties | cut -d= -f2)
+      printf '%s' "$version" > "$RWX_VALUES/version"
+      if git ls-remote --tags origin "refs/tags/v${version}" | grep -q .; then
+        echo "Tag v${version} already exists; skipping publish"
+        printf 'true' > "$RWX_VALUES/released"
+        [[ "$DRY_RUN" == 'true' ]] || exit 0
+      else
+        printf 'false' > "$RWX_VALUES/released"
+      fi
+      if [[ -z "${JETBRAINS_MARKETPLACE_TOKEN:-}" ]]; then
+        echo "JETBRAINS_MARKETPLACE_TOKEN is missing from the jarify-jetbrains vault" >&2
+        exit 1
+      fi
+      if [[ "$DRY_RUN" == 'true' ]]; then
+        echo "Dry run: version v${version}, tag check, and token presence validated."
+      fi
+    env:
+      DRY_RUN: ${{ init.dry-run }}
+      JETBRAINS_MARKETPLACE_TOKEN: ${{ vaults.jarify-jetbrains.secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+
+  - key: publish
+    use: [github-cli, check]
+    if: ${{ init.dry-run != 'true' && tasks.check.values.released == 'false' }}
+    cache: false
+    run: |
+      version="${{ tasks.check.values.version }}"
+      mise run test
+      mise run build
+      mise run verify
+      mise run publish
+      git tag "v${version}"
+      git push origin "v${version}"
+      gh release create "v${version}" --title "v${version}" --generate-notes build/distributions/*
+    env:
+      JETBRAINS_MARKETPLACE_TOKEN: ${{ vaults.jarify-jetbrains.secrets.JETBRAINS_MARKETPLACE_TOKEN }}
+      CERTIFICATE_CHAIN: ${{ vaults.jarify-jetbrains.secrets.CERTIFICATE_CHAIN }}
+      PRIVATE_KEY: ${{ vaults.jarify-jetbrains.secrets.PRIVATE_KEY }}
+      PRIVATE_KEY_PASSWORD: ${{ vaults.jarify-jetbrains.secrets.PRIVATE_KEY_PASSWORD }}
+      GH_TOKEN: ${{ vaults.rwx-github-workflows.github-apps.amfaro-rwx-workflows-management.token }}
+    outputs:
+      artifacts:
+        - key: jarify-jetbrains-plugin
+          path: build/distributions
